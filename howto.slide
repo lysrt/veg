@@ -1,0 +1,86 @@
+Building a SVG renderer
+Lexing, Parsing and Painting
+22:00 21 Mar 2018
+
+Lucas Sartore
+Software Engineer
+
+https://github.com/lysrt
+https://github.com/lysrt/veg
+
+* What we want to do
+
+circle.svg
+.code circle.svg
+
+Render
+
+  ./cmd circle.svg
+
+out.png
+
+.image example.png
+
+* Lexer
+
+Input
+
+  <svg width="100", height="100">
+    <circle cx="50" cy="50" r="40" />
+    ...
+  </svg>
+
+Output
+
+  []Token {
+      {<}, {IDENTIFIER, "svg"}, {IDENTIFIER, "width"}, {=}, {"}, {IDENTIFIER, "100"},  {"},
+      {IDENTIFIER, "height"}, {=}, {"}, {IDENTIFIER, "100"}, {"}, {>},
+      ...
+  }
+* Parser
+
+Input 
+
+  []Token {
+      {<}, {IDENTIFIER, "svg"}, {IDENTIFIER, "width"}, {=}, {"}, {IDENTIFIER, "100"},  {"},
+      {IDENTIFIER, "height"}, {=}, {"}, {IDENTIFIER, "100"}, {"}, {>},
+      ...
+  }
+
+Output
+
+  svg {
+      width = 100
+      height = 100
+      shapes = [
+          circle{
+              cx = 50
+              cy = 50
+              r = 40
+          },
+          ...
+      ]
+  }
+
+* Painting
+
+Input
+
+  svg {
+      width = 100
+      height = 100
+      shapes = [
+          circle{ cx = 50, cy = 50, r = 40 },
+          ...
+      ]
+  }
+
+Output ([[https://github.com/fogleman/gg]])
+
+  dc := gg.NewContext(100, 100)
+  dc.DrawCircle(50, 50, 40)
+  dc.Fill()
+
+.image example.png
+
+* Coding time!
