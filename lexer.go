@@ -7,6 +7,24 @@ type Lexer struct {
 	char            byte
 }
 
+type TokenType string
+
+const (
+	EOF             TokenType = "EOF"
+	ILLEGAL         TokenType = "ILLEGAL"
+	TokenOpen       TokenType = "<"
+	TokenClose      TokenType = ">"
+	TokenSlash      TokenType = "/"
+	TokenQuote      TokenType = "\""
+	TokenEqual      TokenType = "="
+	TokenIdentifier TokenType = "IDENT"
+)
+
+type Token struct {
+	Type    TokenType
+	Literal string
+}
+
 func NewLexer(input string) *Lexer {
 	lexer := Lexer{input: input}
 	lexer.readChar()
@@ -26,33 +44,15 @@ func (l *Lexer) readChar() {
 	l.nextPosition++
 }
 
-type TokenType string
-
-const (
-	EOF             TokenType = "EOF"
-	ILLEGAL         TokenType = "ILLEGAL"
-	TokenLt         TokenType = "LT"
-	TokenGt         TokenType = "GT"
-	TokenSlash      TokenType = "SLASH"
-	TokenQuote      TokenType = "QUOTE"
-	TokenEqual      TokenType = "EQUAL"
-	TokenIdentifier TokenType = "IDENT"
-)
-
-type Token struct {
-	Type    TokenType
-	Literal string
-}
-
 func (l *Lexer) NextToken() Token {
 	var tok Token
-
 	l.skipWhitespace()
+
 	switch l.char {
 	case '<':
-		tok = Token{TokenLt, string(l.char)}
+		tok = Token{TokenOpen, string(l.char)}
 	case '>':
-		tok = Token{TokenGt, string(l.char)}
+		tok = Token{TokenClose, string(l.char)}
 	case '/':
 		tok = Token{TokenSlash, string(l.char)}
 	case '"':
@@ -65,6 +65,7 @@ func (l *Lexer) NextToken() Token {
 		if isAlphaNum(l.char) {
 			tok.Literal = l.readAlphaNum()
 			tok.Type = TokenIdentifier
+			// Don't call readChar(), as the chars were consummed by readAlphaNum()
 			return tok
 		} else {
 			tok = Token{ILLEGAL, string(l.char)}
@@ -76,21 +77,9 @@ func (l *Lexer) NextToken() Token {
 }
 
 func (l *Lexer) skipWhitespace() {
-	for l.char == ' ' || l.char == '\t' || l.char == '\n' || l.char == '\r' {
+	for isWhitespace(l.char) {
 		l.readChar()
 	}
-}
-
-func isAlphaNum(char byte) bool {
-	return isLetter(char) || isDigit(char)
-}
-
-func isLetter(char byte) bool {
-	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '_' || char == '-'
-}
-
-func isDigit(char byte) bool {
-	return '0' <= char && char <= '9'
 }
 
 func (l *Lexer) readAlphaNum() string {
@@ -99,4 +88,17 @@ func (l *Lexer) readAlphaNum() string {
 		l.readChar()
 	}
 	return l.input[startPos:l.currentPosition]
+}
+
+func isWhitespace(char byte) bool {
+	return char == ' ' || char == '\t' || char == '\n' || char == '\r'
+}
+func isAlphaNum(char byte) bool {
+	return isLetter(char) || isDigit(char)
+}
+func isLetter(char byte) bool {
+	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '-'
+}
+func isDigit(char byte) bool {
+	return '0' <= char && char <= '9'
 }

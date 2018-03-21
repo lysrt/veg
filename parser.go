@@ -25,27 +25,26 @@ func (p *Parser) readToken() {
 
 func (p *Parser) ParseSvg() *svg {
 	s := svg{}
-	s.shapes = []painter{}
+	s.drawables = []drawable{}
 
-	p.Must(TokenLt, "expect <")
-	tagName := p.parseIdentifier()
-	if tagName != "svg" {
-		panic("expect svg")
+	p.expect(TokenOpen)
+	if tagName := p.parseIdentifier(); tagName != "svg" {
+		log.Fatalf("expected tag 'svg', got '%s'\n", tagName)
 	}
 
 	attributes := p.parseAttributes()
 	s.width = lookupInt(attributes, "width")
 	s.height = lookupInt(attributes, "height")
 
-	p.Must(TokenGt, "expect svg >")
+	p.expect(TokenClose)
 
-	// Look for "</"
-	for p.currentToken.Type != TokenLt || p.nextToken.Type != TokenSlash {
-		pp := p.parseShape()
-		s.shapes = append(s.shapes, pp)
+	// Stop parsing shapes when finding "</"
+	for p.currentToken.Type != TokenOpen || p.nextToken.Type != TokenSlash {
+		d := p.parseShape()
+		s.drawables = append(s.drawables, d)
 	}
 
-	// Consume remaining tokens, and ignore them
+	// Consume and ignore remaining tokens
 	for p.currentToken.Type != EOF {
 		p.readToken()
 	}
@@ -55,7 +54,7 @@ func (p *Parser) ParseSvg() *svg {
 
 func (p *Parser) parseAttributes() map[string]string {
 	attributes := make(map[string]string)
-	for p.currentToken.Type != TokenSlash && p.currentToken.Type != TokenGt {
+	for p.currentToken.Type != TokenSlash && p.currentToken.Type != TokenClose {
 		k, v := p.parseAttribute()
 		attributes[k] = v
 	}
@@ -63,113 +62,80 @@ func (p *Parser) parseAttributes() map[string]string {
 }
 
 func (p *Parser) parseAttribute() (key, value string) {
-	if p.currentToken.Type != TokenIdentifier {
-		panic("expect attribute identifier")
-	}
-	key = p.currentToken.Literal
-	p.readToken()
-
-	if p.currentToken.Type != TokenEqual {
-		panic("expect attribute equal")
-	}
-	p.readToken()
-
-	if p.currentToken.Type != TokenQuote {
-		panic("expect attribute opening quote")
-	}
-	p.readToken()
-
-	if p.currentToken.Type != TokenIdentifier {
-		panic("expect attribute quoted identifier")
-	}
-	value = p.currentToken.Literal
-	p.readToken()
-
-	if p.currentToken.Type != TokenQuote {
-		panic("expect attribute closing quote")
-	}
-	p.readToken()
+	key = p.parseIdentifier()
+	p.expect(TokenEqual)
+	p.expect(TokenQuote)
+	value = p.parseIdentifier()
+	p.expect(TokenQuote)
 	return
 }
 
-func (p *Parser) Must(tokenType TokenType, msg string) {
+func (p *Parser) expect(tokenType TokenType) {
 	if p.currentToken.Type != tokenType {
-		panic(msg)
+		log.Fatalf("expect %q, got %q (%q)", tokenType, p.currentToken.Type, p.currentToken.Literal)
 	}
 	p.readToken()
 }
 
 func (p *Parser) parseIdentifier() string {
 	if p.currentToken.Type != TokenIdentifier {
-		panic("expect identifier")
+		log.Printf("expect identifier, got %q (%q)", p.currentToken.Type, p.currentToken.Literal)
 	}
 	id := p.currentToken.Literal
 	p.readToken()
 	return id
 }
 
-func (p *Parser) parseShape() painter {
-	p.Must(TokenLt, "expect <")
+func (p *Parser) parseShape() drawable {
+	p.expect(TokenOpen)
 	shapeName := p.parseIdentifier()
 	attributes := p.parseAttributes()
 
-	var pp painter
-
+	var d drawable
 	switch shapeName {
 	case "circle":
-		cx := lookupFloat(attributes, "cx")
-		cy := lookupFloat(attributes, "cy")
-		r := lookupFloat(attributes, "r")
-		strokeWidth := lookupFloat(attributes, "stroke-width")
-		stroke := lookup(attributes, "stroke")
-		fill := lookup(attributes, "fill")
-
-		c := &circle{
-			shape: shape{
-				x:           cx,
-				y:           cy,
-				strokeWidth: strokeWidth,
-				fillColor:   fill,
-				strokeColor: stroke,
-			},
-			radius: r,
-		}
-		pp = painter(c)
+		d = parseCircle(attributes)
 	default:
 		log.Printf("unknown shape %s\n", shapeName)
 	}
 
-	p.Must(TokenSlash, "expect /")
-	p.Must(TokenGt, "expect >")
+	p.expect(TokenSlash)
+	p.expect(TokenClose)
 
-	return pp
+	return d
 }
 
-func lookupFloat(attributes map[string]string, key string) float64 {
-	if v, ok := attributes[key]; ok {
-		fl, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			panic("cannot parse float: " + v)
-		}
-		return fl
+func parseCircle(attributes map[string]string) *circle {
+	cx := lookupFloat(attributes, "cx")
+	cy := lookupFloat(attributes, "cy")
+	r := lookupFloat(attributes, "r")
+	strokeWidth := lookupFloat(attributes, "stroke-width")
+	stroke := attributes["stroke"]
+	fill := attributes["fill"]
+
+	return &circle{
+		shape: shape{
+			x:           cx,
+			y:           cy,
+			strokeWidth: strokeWidth,
+			fillColor:   fill,
+			strokeColor: stroke,
+		},
+		radius: r,
 	}
-	panic("key not found" + key)
 }
 
-func lookupInt(attributes map[string]string, key string) int {
-	if v, ok := attributes[key]; ok {
-		integer, err := strconv.Atoi(v)
-		if err != nil {
-			panic("cannot parse integer: " + v)
-		}
-		return integer
+func lookupFloat(m map[string]string, key string) float64 {
+	fl, err := strconv.ParseFloat(m[key], 64)
+	if err != nil {
+		panic("cannot parse float: " + m[key])
 	}
-	panic("key not found" + key)
+	return fl
 }
-
-func lookup(attributes map[string]string, key string) string {
-	if v, ok := attributes[key]; ok {
-		return v
+func lookupInt(m map[string]string, key string) int {
+	integer, err := strconv.Atoi(m[key])
+	if err != nil {
+		panic("cannot parse integer: " + m[key])
 	}
-	panic("key not found" + key)
+	return integer
 }

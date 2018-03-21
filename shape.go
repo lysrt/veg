@@ -5,19 +5,19 @@ import (
 )
 
 type svg struct {
-	shapes        []painter
+	drawables     []drawable
 	width, height int
+}
+
+type drawable interface {
+	draw(dc *gg.Context)
 }
 
 type shape struct {
 	x, y        float64
+	fillColor   string
 	strokeColor string
 	strokeWidth float64
-	fillColor   string
-}
-
-type painter interface {
-	paint(dc *gg.Context)
 }
 
 type circle struct {
@@ -25,16 +25,17 @@ type circle struct {
 	radius float64
 }
 
-func (c *circle) paint(dc *gg.Context) {
-	x := c.shape.x
-	y := c.shape.y
+func (c *circle) draw(dc *gg.Context) {
+	x := c.x
+	y := c.y
 	r := c.radius
+
 	dc.DrawCircle(x, y, r)
-	dc.SetHexColor(c.shape.fillColor)
+	dc.SetHexColor(c.fillColor)
 	dc.Fill()
 
 	dc.DrawCircle(x, y, r)
-	dc.SetLineWidth(c.shape.strokeWidth)
-	dc.SetHexColor(c.shape.strokeColor)
+	dc.SetLineWidth(c.strokeWidth)
+	dc.SetHexColor(c.strokeColor)
 	dc.Stroke()
 }
