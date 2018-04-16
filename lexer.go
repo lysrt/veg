@@ -97,8 +97,8 @@ func isAlphaNum(char byte) bool {
 	return isLetter(char) || isDigit(char)
 }
 func isLetter(char byte) bool {
-	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '-'
+	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '-' || char == '#'
 }
 func isDigit(char byte) bool {
-	return '0' <= char && char <= '9'
+	return '0' <= char && char <= '9' || char == '.'
 }

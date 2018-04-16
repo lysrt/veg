@@ -126,16 +126,23 @@ func parseCircle(attributes map[string]string) *circle {
 }
 
 func lookupFloat(m map[string]string, key string) float64 {
+	if m[key] == "" {
+		return 0.0
+	}
 	fl, err := strconv.ParseFloat(m[key], 64)
 	if err != nil {
-		panic("cannot parse float: " + m[key])
+		panic("cannot parse float: " + key + ":" + m[key])
 	}
 	return fl
 }
+
 func lookupInt(m map[string]string, key string) int {
+	if m[key] == "" {
+		return 0
+	}
 	integer, err := strconv.Atoi(m[key])
 	if err != nil {
-		panic("cannot parse integer: " + m[key])
+		panic("cannot parse integer: " + key + ":" + m[key])
 	}
 	return integer
 }
