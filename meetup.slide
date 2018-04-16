@@ -1,0 +1,110 @@
+Building a SVG renderer
+Lexing, Parsing and Painting
+19:00 17 Apr 2018
+
+Lucas Sartore
+Software Engineer
+
+https://lysrt.net/
+
+* Scalable Vector Graphics (SVG)
+
+.image veg-repo.svg
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+    <rect shape-rendering="optimizeSpeed" x="0"  y="0"  width="200" height="200" fill="white" />
+    <rect shape-rendering="optimizeSpeed" x="12" y="12" width="7"   height="7"   fill="black" />
+    <rect shape-rendering="optimizeSpeed" x="19" y="12" width="7"   height="7"   fill="black" />
+    <rect shape-rendering="optimizeSpeed" x="26" y="12" width="7"   height="7"   fill="black" />
+    ...
+  </svg>
+
+* Let's convert SVG to PNG
+
+  > cat circle.svg
+
+.code circle.svg
+
+  > render circle.svg
+
+.image example.png
+
+
+Why?
+
+* Lexer (tokenizer)
+
+Input = file
+
+  <svg width="100", height="100">
+    <circle cx="50" cy="50" r="40" />
+    ...
+  </svg>
+
+Output = tokens
+
+  []Token {
+      {<}, {IDENTIFIER, "svg"}, {IDENTIFIER, "width"}, {=}, {"}, {IDENTIFIER, "100"},  {"},
+      {IDENTIFIER, "height"}, {=}, {"}, {IDENTIFIER, "100"}, {"}, {>},
+      ...
+  }
+
+* Parser
+
+Input = tokens
+
+  []Token {
+      {<}, {IDENTIFIER, "svg"}, {IDENTIFIER, "width"}, {=}, {"}, {IDENTIFIER, "100"},  {"},
+      {IDENTIFIER, "height"}, {=}, {"}, {IDENTIFIER, "100"}, {"}, {>},
+      ...
+  }
+
+Output = data (structures, tree, ...)
+
+  svg {
+      width = 100
+      height = 100
+      shapes = [
+          circle{
+              cx = 50
+              cy = 50
+              r = 40
+          },
+          ...
+      ]
+  }
+
+* Painting
+
+Input = data
+
+  svg {
+      width = 100
+      height = 100
+      shapes = [
+          circle{ cx = 50, cy = 50, r = 40 },
+          ...
+      ]
+  }
+
+Output = PNG ([[https://github.com/fogleman/gg]])
+
+  dc := gg.NewContext(100, 100)
+  dc.DrawCircle(50, 50, 40)
+  dc.Fill()
+
+.image example.png
+
+* Coding time!
+
+* 
+
+https://github.com/lysrt/veg
+
+.image veg-repo.svg
+
+
+https://github.com/fogleman/gg
+
+https://interpreterbook.com/

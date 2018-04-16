@@ -4,7 +4,7 @@ type Lexer struct {
 	input           string
 	currentPosition int
 	nextPosition    int
-	char            byte
+	ch              byte
 }
 
 type TokenType string
@@ -39,36 +39,36 @@ func (l *Lexer) peekChar() byte {
 }
 
 func (l *Lexer) readChar() {
-	l.char = l.peekChar()
+	l.ch = l.peekChar()
 	l.currentPosition = l.nextPosition
 	l.nextPosition++
 }
 
 func (l *Lexer) NextToken() Token {
 	var tok Token
-	l.skipWhitespace()
+	l.readWhitespace()
 
-	switch l.char {
+	switch l.ch {
 	case '<':
-		tok = Token{TokenOpen, string(l.char)}
+		tok = Token{TokenOpen, string(l.ch)}
 	case '>':
-		tok = Token{TokenClose, string(l.char)}
+		tok = Token{TokenClose, string(l.ch)}
 	case '/':
-		tok = Token{TokenSlash, string(l.char)}
+		tok = Token{TokenSlash, string(l.ch)}
 	case '"':
-		tok = Token{TokenQuote, string(l.char)}
+		tok = Token{TokenQuote, string(l.ch)}
 	case '=':
-		tok = Token{TokenEqual, string(l.char)}
+		tok = Token{TokenEqual, string(l.ch)}
 	case 0:
 		tok.Type = EOF
 	default:
-		if isAlphaNum(l.char) {
-			tok.Literal = l.readAlphaNum()
+		if isAlphaNum(l.ch) {
+			tok.Literal = l.readIdentifier()
 			tok.Type = TokenIdentifier
-			// Don't call readChar(), as the chars were consummed by readAlphaNum()
+			// Don't call readChar(), as the chars were consummed by readIdentifier()
 			return tok
 		} else {
-			tok = Token{ILLEGAL, string(l.char)}
+			tok = Token{ILLEGAL, string(l.ch)}
 		}
 	}
 
@@ -76,15 +76,15 @@ func (l *Lexer) NextToken() Token {
 	return tok
 }
 
-func (l *Lexer) skipWhitespace() {
-	for isWhitespace(l.char) {
+func (l *Lexer) readWhitespace() {
+	for isWhitespace(l.ch) {
 		l.readChar()
 	}
 }
 
-func (l *Lexer) readAlphaNum() string {
+func (l *Lexer) readIdentifier() string {
 	startPos := l.currentPosition
-	for isAlphaNum(l.char) {
+	for isAlphaNum(l.ch) {
 		l.readChar()
 	}
 	return l.input[startPos:l.currentPosition]
